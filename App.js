@@ -37,7 +37,7 @@ export default function App() {
     }
 
     // console.log(scannedFaces[0].yawAngle);
-    if (scannedFaces[0]?.smilingProbability > 0.5) {
+    if (scannedFaces[0]?.smilingProbability > 0.9) {
       runOnJS(setSmile)(true);
     }
 
@@ -73,14 +73,26 @@ export default function App() {
         frameProcessor={frameProcessor}
         frameProcessorFps={30}
       />
-      {!faceDetected && <Text>Face not detected</Text>}
+      {!faceDetected && <Text style={{color: 'white'}}>Face not detected</Text>}
       {smile && (
-        <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: 'white',
+          }}>
           smilling!
         </Text>
       )}
       {lookLeft && (
-        <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: 'white',
+          }}>
           look left!
         </Text>
       )}
