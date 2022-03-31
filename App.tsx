@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {View, Text, StyleSheet, SafeAreaView} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView, Alert} from 'react-native';
 import {useCameraDevices, useFrameProcessor} from 'react-native-vision-camera';
 import {runOnJS} from 'react-native-reanimated';
 import {Camera} from 'react-native-vision-camera';
@@ -9,7 +9,7 @@ export default function App() {
   const [hasPermission, setHasPermission] = React.useState(false);
   const [faceDetected, setFaceDetected] = React.useState(false);
 
-  const camera = React.useRef();
+  const camera = React.useRef<Camera>(null);
 
   const devices = useCameraDevices();
   const device = devices.front;
@@ -53,10 +53,10 @@ export default function App() {
           // flash: 'on',
         })
         .then(() => {
-          alert('photo taken');
+          Alert.alert('photo taken');
         })
         .catch(e => {
-          alert(e);
+          Alert.alert(e);
         });
     }
   }, [smile, lookLeft]);
@@ -73,7 +73,9 @@ export default function App() {
         frameProcessor={frameProcessor}
         frameProcessorFps={30}
       />
-      {!faceDetected && <Text style={{color: 'white'}}>Face not detected</Text>}
+      {!faceDetected && (
+        <Text style={{color: 'white'}}>Face not detected...</Text>
+      )}
       {smile && (
         <Text
           style={{
