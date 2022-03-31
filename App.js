@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, StyleSheet, SafeAreaView} from 'react-native';
 import {useCameraDevices, useFrameProcessor} from 'react-native-vision-camera';
 import {runOnJS} from 'react-native-reanimated';
 import {Camera} from 'react-native-vision-camera';
@@ -7,7 +7,7 @@ import {scanFaces} from 'vision-camera-face-detector';
 
 export default function App() {
   const [hasPermission, setHasPermission] = React.useState(false);
-  const [faces, setFaces] = React.useState();
+  const [faceDetected, setFaceDetected] = React.useState(false);
 
   const camera = React.useRef();
 
@@ -28,12 +28,20 @@ export default function App() {
     'worklet';
     const scannedFaces = scanFaces(frame);
 
+    console.log(scannedFaces?.length);
+
+    if (!scannedFaces?.[0]) {
+      runOnJS(setFaceDetected)(false);
+    } else {
+      runOnJS(setFaceDetected)(true);
+    }
+
     // console.log(scannedFaces[0].yawAngle);
-    if (scannedFaces[0].smilingProbability > 0.5) {
+    if (scannedFaces[0]?.smilingProbability > 0.5) {
       runOnJS(setSmile)(true);
     }
 
-    if (scannedFaces[0].yawAngle > 30) {
+    if (scannedFaces[0]?.yawAngle > 30) {
       runOnJS(setLookLeft)(true);
     }
   }, []);
@@ -54,17 +62,18 @@ export default function App() {
   }, [smile, lookLeft]);
 
   return device != null && hasPermission ? (
-    <View>
+    <SafeAreaView style={StyleSheet.absoluteFill}>
       <Camera
-        // style={StyleSheet.absoluteFill}
         ref={camera}
-        style={{width: 400, height: 400}}
+        // style={StyleSheet.absoluteFill}
+        style={{width: 300, height: 300}}
         photo={true}
         device={device}
         isActive={true}
         frameProcessor={frameProcessor}
         frameProcessorFps={30}
       />
+      {!faceDetected && <Text>Face not detected</Text>}
       {smile && (
         <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
           smilling!
@@ -75,6 +84,6 @@ export default function App() {
           look left!
         </Text>
       )}
-    </View>
+    </SafeAreaView>
   ) : null;
 }
