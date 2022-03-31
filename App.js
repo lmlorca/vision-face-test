@@ -1,112 +1,80 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
+import * as React from 'react';
+import {View, Text} from 'react-native';
+import {useCameraDevices, useFrameProcessor} from 'react-native-vision-camera';
+import {runOnJS} from 'react-native-reanimated';
+import {Camera} from 'react-native-vision-camera';
+import {scanFaces} from 'vision-camera-face-detector';
 
-import React from 'react';
-import type {Node} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+export default function App() {
+  const [hasPermission, setHasPermission] = React.useState(false);
+  const [faces, setFaces] = React.useState();
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  const camera = React.useRef();
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+  const devices = useCameraDevices();
+  const device = devices.front;
+
+  React.useEffect(() => {
+    (async () => {
+      const status = await Camera.requestCameraPermission();
+      setHasPermission(status === 'authorized');
+    })();
+  }, []);
+
+  const [smile, setSmile] = React.useState(false);
+  const [lookLeft, setLookLeft] = React.useState(false);
+
+  const frameProcessor = useFrameProcessor(frame => {
+    'worklet';
+    const scannedFaces = scanFaces(frame);
+
+    // console.log(scannedFaces[0].yawAngle);
+    if (scannedFaces[0].smilingProbability > 0.5) {
+      runOnJS(setSmile)(true);
+    }
+
+    if (scannedFaces[0].yawAngle > 30) {
+      runOnJS(setLookLeft)(true);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (smile && lookLeft) {
+      camera?.current
+        ?.takePhoto({
+          // flash: 'on',
+        })
+        .then(() => {
+          alert('photo taken');
+        })
+        .catch(e => {
+          alert(e);
+        });
+    }
+  }, [smile, lookLeft]);
+
+  return device != null && hasPermission ? (
+    <View>
+      <Camera
+        // style={StyleSheet.absoluteFill}
+        ref={camera}
+        style={{width: 400, height: 400}}
+        photo={true}
+        device={device}
+        isActive={true}
+        frameProcessor={frameProcessor}
+        frameProcessorFps={30}
+      />
+      {smile && (
+        <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
+          smilling!
+        </Text>
+      )}
+      {lookLeft && (
+        <Text style={{fontSize: 20, fontWeight: 'bold', textAlign: 'center'}}>
+          look left!
+        </Text>
+      )}
     </View>
-  );
-};
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
-
-export default App;
+  ) : null;
+}
