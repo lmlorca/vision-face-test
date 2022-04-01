@@ -25,6 +25,7 @@ export const useFaceDetection = () => {
       width: number;
     },
     tooClose: false,
+    progress: 0,
   };
   type Action =
     | {
@@ -90,6 +91,7 @@ export const useFaceDetection = () => {
             return {
               ...state,
               detection: 'BLINK' as Detection,
+              progress: 16.66,
             };
           }
         }
@@ -102,6 +104,7 @@ export const useFaceDetection = () => {
             return {
               ...state,
               detection: 'TURN_HEAD_LEFT' as Detection,
+              progress: 33.33,
             };
           }
         }
@@ -111,6 +114,7 @@ export const useFaceDetection = () => {
             return {
               ...state,
               detection: 'TURN_HEAD_RIGHT' as Detection,
+              progress: 50,
             };
           }
         }
@@ -120,6 +124,7 @@ export const useFaceDetection = () => {
             return {
               ...state,
               detection: 'NOD' as Detection,
+              progress: 83.33,
             };
           }
         }
@@ -129,6 +134,7 @@ export const useFaceDetection = () => {
             return {
               ...state,
               detection: 'NOD' as Detection,
+              progress: 66.66,
             };
           }
         }
@@ -138,6 +144,7 @@ export const useFaceDetection = () => {
             return {
               ...state,
               success: true,
+              progress: 100,
             };
           }
         }

@@ -7,6 +7,7 @@ import {
   View,
   Dimensions,
 } from 'react-native';
+import {AnimatedCircularProgress} from 'react-native-circular-progress';
 import {runOnJS} from 'react-native-reanimated';
 import Svg, {Path, SvgProps} from 'react-native-svg';
 import {
@@ -74,6 +75,12 @@ export default function App() {
     );
   };
 
+  const getCircleColor = () => {
+    if (state.success) return '#14b814';
+    if (state.tooClose || !state.faceDetected) return '#d12929';
+    return '#06b8ff';
+  };
+
   return device != null && hasPermission ? (
     <SafeAreaView
       style={{
@@ -96,9 +103,24 @@ export default function App() {
           device={device}
           isActive={true}
           frameProcessor={frameProcessor}
-          frameProcessorFps={5}
+          frameProcessorFps={2}
         />
         <CameraPreviewMask style={{position: 'absolute'}} />
+        <AnimatedCircularProgress
+          style={{
+            width: 300,
+            height: 300,
+            position: 'absolute',
+          }}
+          size={300}
+          width={10}
+          backgroundWidth={7}
+          fill={state.progress}
+          tintColor={getCircleColor()}
+          backgroundColor={
+            state.tooClose || !state.faceDetected ? '#d12929' : 'white'
+          }
+        />
       </View>
       {renderInstructions()}
     </SafeAreaView>
@@ -115,3 +137,43 @@ const CameraPreviewMask = (props: SvgProps) => (
     />
   </Svg>
 );
+
+const styles = StyleSheet.create({
+  actionPrompt: {
+    fontSize: 20,
+    textAlign: 'center',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  // promptContainer: {
+  //   position: 'absolute',
+  //   alignSelf: 'center',
+  //   top: PREVIEW_MARGIN_TOP + PREVIEW_SIZE,
+  //   height: '100%',
+  //   width: '100%',
+  //   backgroundColor: 'white',
+  // },
+  faceStatus: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  cameraPreview: {
+    flex: 1,
+  },
+  // circularProgress: {
+  //   position: 'absolute',
+  //   width: PREVIEW_SIZE,
+  //   height: PREVIEW_SIZE,
+  //   top: PREVIEW_MARGIN_TOP,
+  //   alignSelf: 'center',
+  // },
+  action: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginTop: 10,
+    fontWeight: 'bold',
+  },
+});
