@@ -1,18 +1,23 @@
 import * as React from 'react';
-import {View, Text, StyleSheet, SafeAreaView, Alert} from 'react-native';
-import {useCameraDevices, useFrameProcessor} from 'react-native-vision-camera';
+import {Button, SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import {runOnJS} from 'react-native-reanimated';
-import {Camera} from 'react-native-vision-camera';
-import {scanFaces} from 'vision-camera-face-detector';
+import {
+  Camera,
+  useCameraDevices,
+  useFrameProcessor,
+} from 'react-native-vision-camera';
+import {Face, scanFaces} from 'vision-camera-face-detector';
+import {useFaceDetection} from './use-face-detection';
 
 export default function App() {
   const [hasPermission, setHasPermission] = React.useState(false);
-  const [faceDetected, setFaceDetected] = React.useState(false);
 
   const camera = React.useRef<Camera>(null);
 
   const devices = useCameraDevices();
   const device = devices.front;
+
+  const [state, dispatch] = useFaceDetection();
 
   React.useEffect(() => {
     (async () => {
@@ -21,45 +26,39 @@ export default function App() {
     })();
   }, []);
 
-  const [smile, setSmile] = React.useState(false);
-  const [lookLeft, setLookLeft] = React.useState(false);
+  function processDetection(face?: Face) {
+    if (state.success) return;
+    if (face) {
+      dispatch({type: 'FACE_DETECTED'});
+      dispatch({type: 'DETECTION', payload: face});
+    } else {
+      dispatch({type: 'NO_DETECTION'});
+    }
+  }
 
   const frameProcessor = useFrameProcessor(frame => {
     'worklet';
     const scannedFaces = scanFaces(frame);
-
-    console.log(scannedFaces?.length);
-
-    if (!scannedFaces?.[0]) {
-      runOnJS(setFaceDetected)(false);
-    } else {
-      runOnJS(setFaceDetected)(true);
-    }
-
-    // console.log(scannedFaces[0].yawAngle);
-    if (scannedFaces[0]?.smilingProbability > 0.9) {
-      runOnJS(setSmile)(true);
-    }
-
-    if (scannedFaces[0]?.yawAngle > 30) {
-      runOnJS(setLookLeft)(true);
-    }
+    console.log(scannedFaces[0]?.leftEyeOpenProbability);
+    runOnJS(processDetection)(scannedFaces[0]);
   }, []);
 
-  React.useEffect(() => {
-    if (smile && lookLeft) {
-      camera?.current
-        ?.takePhoto({
-          // flash: 'on',
-        })
-        .then(() => {
-          Alert.alert('photo taken');
-        })
-        .catch(e => {
-          Alert.alert(e);
-        });
+  const renderInstructions = () => {
+    if (state.success) {
+      return (
+        <View>
+          <Text style={{color: 'white', marginBottom: 40}}>Success!</Text>
+          <Button title="reset" onPress={() => dispatch({type: 'RESET'})} />
+        </View>
+      );
     }
-  }, [smile, lookLeft]);
+
+    return (
+      <Text style={{color: 'white'}}>
+        {state.faceDetected ? state.detection : 'Face not detected...'}
+      </Text>
+    );
+  };
 
   return device != null && hasPermission ? (
     <SafeAreaView style={StyleSheet.absoluteFill}>
@@ -71,33 +70,14 @@ export default function App() {
         device={device}
         isActive={true}
         frameProcessor={frameProcessor}
-        frameProcessorFps={30}
+        frameProcessorFps={5}
       />
-      {!faceDetected && (
-        <Text style={{color: 'white'}}>Face not detected...</Text>
-      )}
-      {smile && (
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: 'white',
-          }}>
-          smilling!
-        </Text>
-      )}
-      {lookLeft && (
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: 'white',
-          }}>
-          look left!
-        </Text>
-      )}
+      <Text>State:</Text>
+      <Text style={{fontWeight: 'bold', marginBottom: 20}}>
+        {' '}
+        {JSON.stringify(state, null, 2)}
+      </Text>
+      {renderInstructions()}
     </SafeAreaView>
   ) : null;
 }
