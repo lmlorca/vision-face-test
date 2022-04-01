@@ -38,7 +38,7 @@ export const useFaceDetection = () => {
         };
       case 'DETECTION':
         if (state.detection === 'SMILE') {
-          if (action.payload.smilingProbability > 0.9) {
+          if (action.payload.smilingProbability > 0.7) {
             return {
               ...state,
               detection: 'BLINK' as Detection,
@@ -48,8 +48,8 @@ export const useFaceDetection = () => {
 
         if (state.detection === 'BLINK') {
           if (
-            action.payload.leftEyeOpenProbability < 0.04 &&
-            action.payload.rightEyeOpenProbability < 0.04
+            action.payload.leftEyeOpenProbability < 0.07 &&
+            action.payload.rightEyeOpenProbability < 0.07
           ) {
             return {
               ...state,
