@@ -13,6 +13,18 @@ export const useFaceDetection = () => {
     faceDetected: false,
     detection: 'SMILE' as Detection,
     success: false,
+    bounds: {
+      height: 0,
+      width: 0,
+      x: 0,
+      y: 0,
+    } as {
+      y: number;
+      x: number;
+      height: number;
+      width: number;
+    },
+    tooClose: false,
   };
   type Action =
     | {
@@ -20,6 +32,10 @@ export const useFaceDetection = () => {
       }
     | {
         type: 'DETECTION';
+        payload: Face;
+      }
+    | {
+        type: 'BOUNDS';
         payload: Face;
       }
     | {
@@ -36,7 +52,39 @@ export const useFaceDetection = () => {
           ...state,
           faceDetected: true,
         };
+      case 'BOUNDS':
+        if (
+          action.payload.bounds.width > 300 ||
+          action.payload.bounds.height > 300
+        ) {
+          return {
+            ...state,
+            tooClose: true,
+          };
+        }
+        if (
+          action.payload.bounds.y > 350 ||
+          action.payload.bounds.y < 80 ||
+          action.payload.bounds.x < 80 ||
+          action.payload.bounds.x > 160
+        ) {
+          return {
+            ...state,
+            faceDetected: false,
+          };
+        }
+        return {
+          ...state,
+          tooClose: false,
+          faceDetected: true,
+          bounds: action.payload.bounds,
+        };
+
       case 'DETECTION':
+        if (state.success || state.tooClose) {
+          return state;
+        }
+
         if (state.detection === 'SMILE') {
           if (action.payload.smilingProbability > 0.7) {
             return {
@@ -86,7 +134,7 @@ export const useFaceDetection = () => {
         }
 
         if (state.detection === 'NOD') {
-          if (action.payload.pitchAngle < -10) {
+          if (action.payload.pitchAngle < -5) {
             return {
               ...state,
               success: true,
@@ -99,6 +147,9 @@ export const useFaceDetection = () => {
       case 'NO_DETECTION':
         return {
           ...state,
+          bounds: initialState.bounds,
+          tooClose: false,
+          outOfBounds: false,
           faceDetected: false,
         };
 

@@ -1,5 +1,12 @@
 import * as React from 'react';
-import {Button, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {
+  Button,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+} from 'react-native';
 import {runOnJS} from 'react-native-reanimated';
 import Svg, {Path, SvgProps} from 'react-native-svg';
 import {
@@ -9,6 +16,8 @@ import {
 } from 'react-native-vision-camera';
 import {Face, scanFaces} from 'vision-camera-face-detector';
 import {useFaceDetection} from './use-face-detection';
+
+const {width, height} = Dimensions.get('window');
 
 export default function App() {
   const [hasPermission, setHasPermission] = React.useState(false);
@@ -28,9 +37,10 @@ export default function App() {
   }, []);
 
   function processDetection(face?: Face) {
-    if (state.success) return;
+    // if (state.success || state.outOfBounds || state.tooClose) return;
     if (face) {
       dispatch({type: 'FACE_DETECTED'});
+      dispatch({type: 'BOUNDS', payload: face});
       dispatch({type: 'DETECTION', payload: face});
     } else {
       dispatch({type: 'NO_DETECTION'});
@@ -40,7 +50,7 @@ export default function App() {
   const frameProcessor = useFrameProcessor(frame => {
     'worklet';
     const scannedFaces = scanFaces(frame);
-    runOnJS(processDetection)(scannedFaces[0]);
+    runOnJS(processDetection)(scannedFaces?.[0]);
   }, []);
 
   const renderInstructions = () => {
@@ -51,6 +61,10 @@ export default function App() {
           <Button title="reset" onPress={() => dispatch({type: 'RESET'})} />
         </View>
       );
+    }
+
+    if (state.tooClose) {
+      return <Text style={{color: 'red'}}>Too Close</Text>;
     }
 
     return (
@@ -66,6 +80,7 @@ export default function App() {
         flex: 1,
         alignItems: 'center',
         backgroundColor: 'white',
+        position: 'relative',
       }}>
       <View
         style={{
@@ -85,10 +100,6 @@ export default function App() {
         />
         <CameraPreviewMask style={{position: 'absolute'}} />
       </View>
-      {/* <Text>State:</Text>
-      <Text style={{fontWeight: 'bold', marginBottom: 20, color: 'black'}}>
-        {JSON.stringify(state, null, 2)}
-      </Text> */}
       {renderInstructions()}
     </SafeAreaView>
   ) : null;
